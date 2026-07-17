@@ -4,6 +4,7 @@ import { KpiCard } from "@/components/ui/KpiCard";
 import { Card } from "@/components/ui/Card";
 import { RegionContaminationChart } from "@/components/dashboard/RegionContaminationChart";
 import { ContaminationTypeChart } from "@/components/dashboard/ContaminationTypeChart";
+import { QuantumRiskEstimator } from "@/components/dashboard/QuantumRiskEstimator";
 import {
   getOverallStats,
   getRegionSummaries,
@@ -60,6 +61,13 @@ export default async function OverviewPage() {
             hint="Avg. waterborne disease rate"
           />
         </div>
+
+        <Card
+          title="Live Quantum Risk Estimator"
+          subtitle="Real quantum kernel SVM (QSVC) inference, computed in your browser"
+        >
+          <QuantumRiskEstimator />
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card

@@ -1,0 +1,72 @@
+/**
+ * A minimal, genuine quantum statevector simulator, sized for the exact
+ * circuit this project needs: N qubits, each initialized to |0>, with a
+ * single RY(theta) rotation applied per qubit (PennyLane's "AngleEmbedding"
+ * feature map, as used in the original project's QSVC notebook).
+ *
+ * This computes the ACTUAL 2^N-dimensional statevector via tensor
+ * (Kronecker) products of each qubit's post-rotation state - it does not
+ * take a mathematical shortcut. For 4 qubits this is a 16-dimensional
+ * vector, computed in microseconds; the point is that this is a real,
+ * verifiable simulation of the quantum circuit's evolution, not a fitted
+ * approximation.
+ *
+ * All amplitudes here are real numbers (not complex): RY is a real-valued
+ * rotation matrix, and with no other gates in this feature map, the
+ * resulting statevector never acquires an imaginary component. If this
+ * project's circuit ever adds gates with complex amplitudes (e.g. RZ, S,
+ * or a phase gate), this simulator would need to switch to complex
+ * arithmetic - documented here so that assumption isn't silently violated
+ * later.
+ */
+
+/** Single-qubit state after RY(theta)|0>: real 2-vector [cos(t/2), sin(t/2)]. */
+function ryQubitState(theta: number): [number, number] {
+  const half = theta / 2;
+  return [Math.cos(half), Math.sin(half)];
+}
+
+/** Tensor (Kronecker) product of two real vectors. */
+function kron(a: number[], b: number[]): number[] {
+  const result = new Array(a.length * b.length);
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) {
+      result[i * b.length + j] = a[i] * b[j];
+    }
+  }
+  return result;
+}
+
+/**
+ * Computes the full N-qubit statevector after applying RY(angles[i]) to
+ * qubit i for every qubit, starting from |0...0>. This is a real tensor
+ * product of N independent single-qubit states (AngleEmbedding has no
+ * entangling gates), computed explicitly rather than via a closed-form
+ * shortcut.
+ */
+export function featureMapState(angles: number[]): number[] {
+  let state: number[] = [1];
+  for (const theta of angles) {
+    const qubitState = ryQubitState(theta);
+    state = kron(state, Array.from(qubitState));
+  }
+  return state;
+}
+
+function dot(a: number[], b: number[]): number {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+  return sum;
+}
+
+/**
+ * Quantum kernel: fidelity |<psi(angles1)|psi(angles2)>|^2 between the two
+ * feature-mapped quantum states. Since all amplitudes are real here, the
+ * inner product is a plain dot product and the fidelity is its square.
+ */
+export function quantumKernel(angles1: number[], angles2: number[]): number {
+  const s1 = featureMapState(angles1);
+  const s2 = featureMapState(angles2);
+  const overlap = dot(s1, s2);
+  return overlap * overlap;
+}
