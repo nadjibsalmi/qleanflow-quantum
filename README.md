@@ -46,6 +46,21 @@ dataset or an actual model run — nothing is randomized or invented:
   dashboard says so explicitly instead of showing a plausible-looking
   fabricated number.
 
+## The Live Quantum Algorithm
+
+The dashboard's "Live Quantum Risk Estimator" runs a real Quantum Support
+Vector Classifier (QSVC) kernel computation client-side, in the browser -
+not a mock, and not just historical numbers. See
+[`notebooks/qsvc_live_demo.ipynb`](notebooks/qsvc_live_demo.ipynb) for a
+fully executed walkthrough: real 4-qubit statevector simulation, quantum
+kernel matrix, training, evaluation (78.0% accuracy / F1 0.8675 / AUROC
+0.72 on this dataset), and a direct comparison against a classical RBF
+kernel on the same train/test split. The exact same feature map and
+kernel math from that notebook is ported to TypeScript
+(`src/algorithms/quantumSimulator.ts`), verified to match the Python
+implementation to 9+ decimal places (`quantumSimulator.test.ts`,
+`qsvcPipeline.test.ts`).
+
 ## Tech Stack
 
 - **Next.js 16** (App Router) + **TypeScript**
