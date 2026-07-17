@@ -42,7 +42,7 @@ export function MobileNav() {
         onClick={() => setOpen(true)}
         aria-label="Open navigation menu"
         aria-expanded={open}
-        className="lg:hidden p-2 -ml-2 rounded-lg text-muted hover:text-foreground hover:bg-surface transition-colors"
+        className="lg:hidden p-2 -ml-2 rounded-lg text-muted hover:text-foreground hover:bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Menu className="w-5 h-5" strokeWidth={2} />
       </button>
@@ -63,7 +63,7 @@ export function MobileNav() {
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close menu"
-                className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface"
+                className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -76,7 +76,7 @@ export function MobileNav() {
                     key={href}
                     href={href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                       active
                         ? "bg-accent-soft text-accent"
                         : "text-muted hover:text-foreground hover:bg-surface"

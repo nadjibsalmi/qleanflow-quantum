@@ -14,7 +14,7 @@
   --surface-border: #e5e5ea;
   --muted: #6b6b76;
 
-  --accent: #6366f1; /* indigo - primary interactive color */
+  --accent: #4f46e5; /* indigo-600. WCAG AA verified: 6.29:1 on white (was #6366f1 at 4.47:1, failing the 4.5:1 threshold for normal text) */
   --accent-foreground: #ffffff;
   --accent-soft: #eef0ff;
 

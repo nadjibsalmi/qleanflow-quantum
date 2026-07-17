@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Done
+
 - [x] Real data pipeline (no randomized/fabricated numbers anywhere)
 - [x] Client-side risk estimator (real fitted logistic regression)
 - [x] Model comparison with real notebook-derived metrics
@@ -10,6 +11,7 @@
 - [x] Unit tests for the risk estimator
 
 ## Planned
+
 - [ ] Component tests for the dashboard UI (React Testing Library) -
       currently only the pure risk-estimator logic is tested
 - [ ] Accessibility audit (axe-core or Lighthouse CI) - not yet formally

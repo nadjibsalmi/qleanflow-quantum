@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 ## [Unreleased]
 
 ### Added
+
 - Mobile navigation drawer - previously the sidebar simply disappeared
   below the `lg` breakpoint with no replacement, leaving mobile users
   with no way to navigate between pages.
@@ -14,6 +15,7 @@ All notable changes to this project are documented here.
 - Issue templates, PR template, CONTRIBUTING.md, .editorconfig, Prettier.
 
 ### Fixed
+
 - A test-writing bug of my own: an early draft test assumed the model's
   output "at dataset-average inputs" would equal `sigmoid(intercept)`.
   This is wrong because `isMiningZone` is a boolean (0/1) feature and is

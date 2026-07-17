@@ -37,7 +37,7 @@ export function Header({ title }: { title: string }) {
       <button
         onClick={toggleTheme}
         aria-label="Toggle dark mode"
-        className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface transition-colors"
+        className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         {isDark ? (
           <Sun className="w-4 h-4" strokeWidth={2} />
