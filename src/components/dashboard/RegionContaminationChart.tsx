@@ -11,11 +11,7 @@ import {
 } from "recharts";
 import type { RegionSummary } from "@/services/waterQualityData";
 
-export function RegionContaminationChart({
-  data,
-}: {
-  data: RegionSummary[];
-}) {
+export function RegionContaminationChart({ data }: { data: RegionSummary[] }) {
   return (
     <ResponsiveContainer width="100%" height={320}>
       <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>

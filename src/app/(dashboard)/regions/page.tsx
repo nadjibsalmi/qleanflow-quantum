@@ -22,18 +22,10 @@ export default async function RegionsPage() {
               <thead>
                 <tr className="border-b border-surface-border text-left text-muted">
                   <th className="px-5 py-3 font-medium">Region</th>
-                  <th className="px-5 py-3 font-medium text-right">
-                    Communities
-                  </th>
-                  <th className="px-5 py-3 font-medium text-right">
-                    Avg. contamination
-                  </th>
-                  <th className="px-5 py-3 font-medium text-right">
-                    Good quality
-                  </th>
-                  <th className="px-5 py-3 font-medium text-right">
-                    Mining zone
-                  </th>
+                  <th className="px-5 py-3 font-medium text-right">Communities</th>
+                  <th className="px-5 py-3 font-medium text-right">Avg. contamination</th>
+                  <th className="px-5 py-3 font-medium text-right">Good quality</th>
+                  <th className="px-5 py-3 font-medium text-right">Mining zone</th>
                 </tr>
               </thead>
               <tbody>
@@ -41,9 +33,7 @@ export default async function RegionsPage() {
                   <tr
                     key={r.region}
                     className={
-                      i !== regions.length - 1
-                        ? "border-b border-surface-border/60"
-                        : ""
+                      i !== regions.length - 1 ? "border-b border-surface-border/60" : ""
                     }
                   >
                     <td className="px-5 py-3 font-medium">{r.region}</td>
@@ -56,8 +46,8 @@ export default async function RegionsPage() {
                           r.avgContamination > 3
                             ? "text-danger font-medium"
                             : r.avgContamination > 2.5
-                            ? "text-warning font-medium"
-                            : "text-success font-medium"
+                              ? "text-warning font-medium"
+                              : "text-success font-medium"
                         }
                       >
                         {r.avgContamination}

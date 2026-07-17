@@ -26,10 +26,9 @@ export default function ModelPage() {
       <Header title="Model" />
       <main className="flex-1 p-6 space-y-6">
         <p className="text-sm text-muted max-w-2xl">
-          Three classification approaches are trained on the same
-          PCA-reduced feature set and compared on accuracy, F1, and ROC-AUC.
-          The configuration below reflects the actual training run this
-          project is based on.
+          Three classification approaches are trained on the same PCA-reduced feature set
+          and compared on accuracy, F1, and ROC-AUC. The configuration below reflects the
+          actual training run this project is based on.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -67,7 +66,9 @@ export default function ModelPage() {
                 </div>
               ) : (
                 <div className="rounded-lg bg-warning/10 border border-warning/30 px-3 py-2">
-                  <span className="text-xs font-medium text-warning">Final accuracy not captured</span>
+                  <span className="text-xs font-medium text-warning">
+                    Final accuracy not captured
+                  </span>
                 </div>
               )}
               {"metricsNote" in m && m.metricsNote && (
@@ -97,25 +98,25 @@ export default function ModelPage() {
         <Card title="Circuit architecture">
           <ol className="text-sm text-muted space-y-2 list-decimal list-inside">
             <li>
-              Input features are reduced to {QNN_CONFIG.pcaComponents}{" "}
-              principal components via PCA, matching the qubit count.
+              Input features are reduced to {QNN_CONFIG.pcaComponents} principal
+              components via PCA, matching the qubit count.
             </li>
             <li>
-              Each component is angle-embedded onto its qubit using{" "}
-              {QNN_CONFIG.embedding}.
+              Each component is angle-embedded onto its qubit using {QNN_CONFIG.embedding}
+              .
             </li>
             <li>
-              {QNN_CONFIG.variationalLayers} strongly entangling variational
-              layers apply trainable rotation gates and entangling CNOTs.
+              {QNN_CONFIG.variationalLayers} strongly entangling variational layers apply
+              trainable rotation gates and entangling CNOTs.
             </li>
             <li>
-              A PauliZ expectation value is measured on each qubit and passed
-              through a classical linear layer to produce the prediction.
+              A PauliZ expectation value is measured on each qubit and passed through a
+              classical linear layer to produce the prediction.
             </li>
             <li>
               Parameters are updated via {QNN_CONFIG.optimizer} with a{" "}
-              {QNN_CONFIG.lrSchedule} learning rate schedule over{" "}
-              {QNN_CONFIG.epochs} epochs.
+              {QNN_CONFIG.lrSchedule} learning rate schedule over {QNN_CONFIG.epochs}{" "}
+              epochs.
             </li>
           </ol>
         </Card>

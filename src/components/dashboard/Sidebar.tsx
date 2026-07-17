@@ -53,8 +53,8 @@ export function Sidebar() {
 
       <div className="px-6 py-4 border-t border-surface-border">
         <p className="text-xs text-muted leading-relaxed">
-          Quantum-enhanced risk assessment for water contamination in
-          mining-affected regions of Ghana.
+          Quantum-enhanced risk assessment for water contamination in mining-affected
+          regions of Ghana.
         </p>
       </div>
     </aside>

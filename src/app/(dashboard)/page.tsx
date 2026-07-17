@@ -25,8 +25,8 @@ export default async function OverviewPage() {
       <main className="flex-1 p-6 space-y-6">
         <div>
           <p className="text-sm text-muted max-w-2xl">
-            Live risk assessment across {stats.totalCommunities} surveyed
-            communities in mining-affected regions of Ghana, covering roughly{" "}
+            Live risk assessment across {stats.totalCommunities} surveyed communities in
+            mining-affected regions of Ghana, covering roughly{" "}
             {stats.totalPopulation.toLocaleString()} people.
           </p>
         </div>
@@ -81,9 +81,7 @@ export default async function OverviewPage() {
             <div>
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-muted">Government intervention</span>
-                <span className="font-medium">
-                  {stats.governmentInterventionPct}%
-                </span>
+                <span className="font-medium">{stats.governmentInterventionPct}%</span>
               </div>
               <div className="h-2 rounded-full bg-surface-border overflow-hidden">
                 <div

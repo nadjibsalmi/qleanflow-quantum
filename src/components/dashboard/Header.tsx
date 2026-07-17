@@ -14,9 +14,7 @@ export function Header({ title }: { title: string }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const dark = stored ? stored === "dark" : prefersDark;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDark(dark);

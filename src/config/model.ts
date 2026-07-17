@@ -31,7 +31,8 @@ export const COMPARED_MODELS = [
     name: "Classical SVM",
     description: "Support Vector Machine baseline (scikit-learn), RBF kernel.",
     accuracy: 0.77,
-    metricsNote: "Only test accuracy was scored for this baseline run (no F1/precision/recall computed in the source notebook).",
+    metricsNote:
+      "Only test accuracy was scored for this baseline run (no F1/precision/recall computed in the source notebook).",
   },
   {
     id: "qsvc",
@@ -48,8 +49,7 @@ export const COMPARED_MODELS = [
   {
     id: "qnn",
     name: "Quantum Neural Network",
-    description:
-      "Variational quantum circuit trained end-to-end with gradient descent.",
+    description: "Variational quantum circuit trained end-to-end with gradient descent.",
     accuracy: null,
     metricsNote:
       "Training ran for 100 epochs (loss dropped from 1.00 to 0.87 by epoch 11) but the final held-out accuracy wasn't captured in the saved notebook output. Shown honestly as unavailable rather than estimated.",

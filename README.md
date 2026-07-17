@@ -1,7 +1,7 @@
 # QleanFlow Quantum
 
 Quantum-enhanced water contamination risk assessment for communities affected
-by illegal mining (*galamsey*) in Ghana.
+by illegal mining (_galamsey_) in Ghana.
 
 This project reimplements, as a proper software product, the concept behind
 a hackathon submission from the AIMS Ghana Quantathon 2025 (original

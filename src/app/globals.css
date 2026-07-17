@@ -14,7 +14,7 @@
   --surface-border: #e5e5ea;
   --muted: #6b6b76;
 
-  --accent: #6366f1;       /* indigo - primary interactive color */
+  --accent: #6366f1; /* indigo - primary interactive color */
   --accent-foreground: #ffffff;
   --accent-soft: #eef0ff;
 
@@ -22,8 +22,9 @@
   --warning: #d97706;
   --danger: #dc2626;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
 }
 

@@ -58,9 +58,7 @@ function mapRow(row: RawRow): CommunityRecord {
     waterAccessScore: parseFloat(row["Water Access Score"]),
     numberOfChildren: parseInt(row["Number of Children"], 10),
     population: parseInt(row["Population"], 10),
-    avgDailyWaterNeedsLiters: parseFloat(
-      row["Average Daily Water Needs (liters)"]
-    ),
+    avgDailyWaterNeedsLiters: parseFloat(row["Average Daily Water Needs (liters)"]),
     diseasePrevalence: parseFloat(row["Prevalence of Water Borne Diseases"]),
     accessibility: row["Accessibility"],
     urbanRural: row["Urban/Rural"],
@@ -112,18 +110,18 @@ export async function getRegionSummaries(): Promise<RegionSummary[]> {
     .map(([region, list]) => ({
       region,
       totalCommunities: list.length,
-      avgContamination:
-        round(list.reduce((s, r) => s + r.contaminationLevel, 0) / list.length, 3),
-      goodQualityPct:
-        round(
-          (list.filter((r) => r.waterQuality === 1).length / list.length) * 100,
-          1
-        ),
-      miningZonePct:
-        round(
-          (list.filter((r) => r.isMiningZone).length / list.length) * 100,
-          1
-        ),
+      avgContamination: round(
+        list.reduce((s, r) => s + r.contaminationLevel, 0) / list.length,
+        3
+      ),
+      goodQualityPct: round(
+        (list.filter((r) => r.waterQuality === 1).length / list.length) * 100,
+        1
+      ),
+      miningZonePct: round(
+        (list.filter((r) => r.isMiningZone).length / list.length) * 100,
+        1
+      ),
     }))
     .sort((a, b) => b.avgContamination - a.avgContamination);
 }
@@ -150,10 +148,7 @@ export async function getOverallStats(): Promise<OverallStats> {
       (records.filter((r) => r.waterQuality === 1).length / n) * 100,
       1
     ),
-    miningZonePct: round(
-      (records.filter((r) => r.isMiningZone).length / n) * 100,
-      1
-    ),
+    miningZonePct: round((records.filter((r) => r.isMiningZone).length / n) * 100, 1),
     avgDiseasePrevalence: round(
       records.reduce((s, r) => s + r.diseasePrevalence, 0) / n,
       3
@@ -166,10 +161,7 @@ export async function getOverallStats(): Promise<OverallStats> {
       (records.filter((r) => r.governmentIntervention).length / n) * 100,
       1
     ),
-    ngoPresencePct: round(
-      (records.filter((r) => r.ngoPresence).length / n) * 100,
-      1
-    ),
+    ngoPresencePct: round((records.filter((r) => r.ngoPresence).length / n) * 100, 1),
   };
 }
 
