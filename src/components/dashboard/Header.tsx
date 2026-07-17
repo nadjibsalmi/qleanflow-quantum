@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
+import { MobileNav } from "./MobileNav";
 
 export function Header({ title }: { title: string }) {
   // Starts false to match server-rendered HTML exactly (avoids a hydration
@@ -29,7 +30,10 @@ export function Header({ title }: { title: string }) {
 
   return (
     <header className="flex items-center justify-between h-16 px-6 border-b border-surface-border">
-      <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+      <div className="flex items-center gap-2">
+        <MobileNav />
+        <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+      </div>
       <button
         onClick={toggleTheme}
         aria-label="Toggle dark mode"

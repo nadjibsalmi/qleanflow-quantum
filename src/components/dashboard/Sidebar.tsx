@@ -2,23 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Map,
-  Cpu,
-  FlaskConical,
-  FileText,
-  Droplets,
-} from "lucide-react";
+import { Droplets } from "lucide-react";
 import { cn } from "@/utils/cn";
-
-const NAV_ITEMS = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/regions", label: "Regions", icon: Map },
-  { href: "/model", label: "Model", icon: Cpu },
-  { href: "/methodology", label: "Methodology", icon: FlaskConical },
-  { href: "/about", label: "About", icon: FileText },
-] as const;
+import { NAV_ITEMS } from "./navItems";
 
 export function Sidebar() {
   const pathname = usePathname();
