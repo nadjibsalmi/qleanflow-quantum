@@ -9,13 +9,17 @@
 - [x] Mobile navigation
 - [x] CI (lint + test + build), Prettier, community health files
 - [x] Unit tests for the risk estimator
+- [x] Manual accessibility pass: found and fixed a real WCAG AA contrast
+      failure (4.47:1, needed 4.5:1) and added missing focus-visible
+      states project-wide
 
 ## Planned
 
 - [ ] Component tests for the dashboard UI (React Testing Library) -
       currently only the pure risk-estimator logic is tested
-- [ ] Accessibility audit (axe-core or Lighthouse CI) - not yet formally
-      checked beyond manual `aria-label`/`prefers-reduced-motion` additions
+- [ ] Full axe-core/Lighthouse CI accessibility run (blocked in this
+      sandbox by network restrictions on downloading headless Chrome -
+      worth running in an unrestricted environment as a second pass)
 - [ ] Performance audit (bundle size analysis, Lighthouse score) - not
       yet measured
 - [ ] Interactive map of communities (currently latitude/longitude are
