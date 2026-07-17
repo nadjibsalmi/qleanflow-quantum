@@ -1,7 +1,12 @@
 # QleanFlow Quantum
 
-Quantum-enhanced water contamination risk assessment for communities affected
-by illegal mining (_galamsey_) in Ghana.
+A water contamination risk dashboard for communities affected by illegal
+mining (_galamsey_) in Ghana. Its live risk estimator is a real, classical
+logistic regression model - **not a live quantum computation**. Quantum
+results (QSVC, QNN) shown on the Model page are historical reference
+metrics copied from the original project's Jupyter notebooks, where those
+models were actually trained; nothing quantum runs inside this
+application itself.
 
 This project reimplements, as a proper software product, the concept behind
 a hackathon submission from the AIMS Ghana Quantathon 2025 (original
