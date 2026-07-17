@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens.
+ * A small, deliberate palette rather than defaults: near-black/white base
+ * (Stripe/Linear-style neutral canvas) with a single accent hue used
+ * consistently for interactive/quantum elements, instead of scattering
+ * arbitrary colors across components.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0f;
+  --surface: #f7f7f9;
+  --surface-border: #e5e5ea;
+  --muted: #6b6b76;
+
+  --accent: #6366f1;       /* indigo - primary interactive color */
+  --accent-foreground: #ffffff;
+  --accent-soft: #eef0ff;
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+}
+
+.dark {
+  --background: #0a0a0f;
+  --foreground: #f4f4f6;
+  --surface: #131318;
+  --surface-border: #232330;
+  --muted: #9797a6;
+
+  --accent: #818cf8;
+  --accent-foreground: #0a0a0f;
+  --accent-soft: #1e1e3a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-border: var(--surface-border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
