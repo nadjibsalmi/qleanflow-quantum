@@ -1,11 +1,12 @@
 import { Header } from "@/components/dashboard/Header";
 import { Card } from "@/components/ui/Card";
-import { getRegionSummaries } from "@/services/waterQualityData";
+import { CommunityMap } from "@/components/dashboard/CommunityMap";
+import { getRegionSummaries, getAllRecords } from "@/services/waterQualityData";
 
 export const metadata = { title: "Regions" };
 
 export default async function RegionsPage() {
-  const regions = await getRegionSummaries();
+  const [regions, records] = await Promise.all([getRegionSummaries(), getAllRecords()]);
 
   return (
     <>
@@ -15,6 +16,13 @@ export default async function RegionsPage() {
           Regional breakdown of all {regions.reduce((s, r) => s + r.totalCommunities, 0)}{" "}
           surveyed communities, ranked by average contamination level.
         </p>
+
+        <Card
+          title="Geographic Distribution"
+          subtitle="All 500 communities, positioned by real coordinates"
+        >
+          <CommunityMap records={records} />
+        </Card>
 
         <Card>
           <div className="overflow-x-auto -m-5">
