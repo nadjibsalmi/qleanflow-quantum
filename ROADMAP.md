@@ -22,8 +22,8 @@
       worth running in an unrestricted environment as a second pass)
 - [ ] Performance audit (bundle size analysis, Lighthouse score) - not
       yet measured
-- [ ] Interactive map of communities (currently latitude/longitude are
-      parsed but not visualized geographically)
+- [x] Interactive map of communities (scatter plot by real lat/long,
+      colored by contamination, mining zones flagged)
 - [ ] Deploy to Vercel with a live public demo link in the README
 - [ ] Re-run the QNN training to completion and replace the "not
       captured" honesty note on the Model page with a real final
