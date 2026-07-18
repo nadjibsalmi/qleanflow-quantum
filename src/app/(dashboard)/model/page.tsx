@@ -1,6 +1,7 @@
 import { Header } from "@/components/dashboard/Header";
 import { Card } from "@/components/ui/Card";
 import { QNN_CONFIG, COMPARED_MODELS } from "@/config/model";
+import Link from "next/link";
 
 export const metadata = { title: "Model" };
 
@@ -28,8 +29,29 @@ export default function ModelPage() {
         <p className="text-sm text-muted max-w-2xl">
           Three classification approaches are trained on the same PCA-reduced feature set
           and compared on accuracy, F1, and ROC-AUC. The configuration below reflects the
-          actual training run this project is based on.
+          original hackathon training run this project is based on.
         </p>
+
+        <div className="rounded-lg bg-accent-soft border border-accent/30 px-4 py-3 text-sm text-accent max-w-2xl">
+          The QSVC accuracy shown below (83.33%) is from the{" "}
+          <strong>original hackathon notebook</strong> (140/60 train/test split, 8
+          PCA-derived features from an earlier dataset version). The{" "}
+          <Link href="/" className="underline">
+            Live Quantum Risk Estimator
+          </Link>{" "}
+          on the Overview page uses a QSVC retrained on the current dataset (18 raw
+          features, 400/100 train/test split), which measures 78.0% accuracy - see{" "}
+          <a
+            href="https://github.com/nadjibsalmi/qleanflow-quantum/blob/main/notebooks/qsvc_live_demo.ipynb"
+            className="underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            the live-executed notebook
+          </a>{" "}
+          for that run. These are two different training runs of the same algorithm on
+          different data splits, not a discrepancy in the algorithm itself.
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {COMPARED_MODELS.map((m) => (

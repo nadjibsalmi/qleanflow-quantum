@@ -26,6 +26,16 @@ interface CommunityMapProps {
  * is showing the real geographic spread and risk pattern, not street-level
  * detail.
  */
+function mapSummary(records: CommunityRecord[]): string {
+  const miningCount = records.filter((r) => r.isMiningZone).length;
+  const highContaminationCount = records.filter((r) => r.contaminationLevel >= 5).length;
+  return (
+    `Geographic scatter plot of ${records.length} communities across Ghana. ` +
+    `${miningCount} are in active mining zones (shown in red). ` +
+    `${highContaminationCount} have high contamination levels (5 or above).`
+  );
+}
+
 export function CommunityMap({ records }: CommunityMapProps) {
   const points = records.map((r) => ({
     x: r.longitude,
@@ -45,7 +55,7 @@ export function CommunityMap({ records }: CommunityMapProps) {
   }
 
   return (
-    <div className="h-[420px]">
+    <div className="h-[420px]" role="img" aria-label={mapSummary(records)}>
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
           <CartesianGrid stroke="var(--surface-border)" strokeDasharray="3 3" />
@@ -85,9 +95,9 @@ export function CommunityMap({ records }: CommunityMapProps) {
             }}
           />
           <Scatter data={points}>
-            {points.map((p, i) => (
+            {points.map((p) => (
               <Cell
-                key={i}
+                key={p.community}
                 fill={colorFor(p.contamination, p.isMiningZone)}
                 fillOpacity={0.65}
               />

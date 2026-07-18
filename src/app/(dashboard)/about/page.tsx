@@ -1,5 +1,6 @@
 import { Header } from "@/components/dashboard/Header";
 import { Card } from "@/components/ui/Card";
+import Link from "next/link";
 
 export const metadata = { title: "About" };
 
@@ -27,11 +28,18 @@ export default function AboutPage() {
         <Card title="Stack">
           <p className="text-sm text-muted leading-relaxed">
             Next.js (App Router) and TypeScript for the dashboard, Tailwind CSS for
-            styling, and Recharts for data visualization. The quantum model configuration
-            referenced throughout this dashboard comes from a PennyLane-based variational
-            circuit; model training itself runs offline in Python, and this dashboard
-            presents the resulting configuration and the underlying dataset — it does not
-            retrain the model at request time.
+            styling, and Recharts for data visualization. The Overview page&apos;s{" "}
+            <Link href="/" className="text-accent hover:underline">
+              Live Quantum Risk Estimator
+            </Link>{" "}
+            runs a real Quantum SVC kernel computation client-side, in the browser, on
+            every input change - a genuine 4-qubit statevector simulation, not a static
+            precomputed value. The QNN configuration referenced on the{" "}
+            <Link href="/model" className="text-accent hover:underline">
+              Model
+            </Link>{" "}
+            page reflects a separate model that was trained offline in Python and is shown
+            as a historical reference result, not retrained in the browser.
           </p>
         </Card>
 
@@ -39,9 +47,9 @@ export default function AboutPage() {
           <p className="text-sm text-muted leading-relaxed">
             <code>data/ghana_water_quality_data.csv</code> — 500 communities across 16
             regions of Ghana. See the{" "}
-            <a href="/methodology" className="text-accent hover:underline">
+            <Link href="/methodology" className="text-accent hover:underline">
               Methodology
-            </a>{" "}
+            </Link>{" "}
             page for details on the dataset and modeling approach.
           </p>
         </Card>

@@ -43,8 +43,23 @@ function toBool(v: string): boolean {
   return v === "1" || v.toLowerCase() === "true" || v.toLowerCase() === "yes";
 }
 
+const NUMERIC_FIELDS: (keyof CommunityRecord)[] = [
+  "latitude",
+  "longitude",
+  "distanceToRiverKm",
+  "contaminationLevel",
+  "waterAccessScore",
+  "numberOfChildren",
+  "population",
+  "avgDailyWaterNeedsLiters",
+  "diseasePrevalence",
+  "avgHouseholdIncomeGHS",
+  "educationLevelYears",
+  "yearCollected",
+];
+
 function mapRow(row: RawRow): CommunityRecord {
-  return {
+  const record: CommunityRecord = {
     community: row["Community"],
     region: row["Region"],
     latitude: parseFloat(row["Latitude"]),
@@ -69,23 +84,67 @@ function mapRow(row: RawRow): CommunityRecord {
     ngoPresence: toBool(row["NGO Presence"]),
     yearCollected: parseInt(row["Year Data Collected"], 10),
   };
+
+  // BEFORE: parseFloat/parseInt could silently produce NaN for any
+  // malformed CSV cell with zero indication anywhere that it happened -
+  // NaN would then quietly propagate into every downstream aggregate
+  // (averages, sums) without ever throwing. Now surfaced as a console
+  // warning naming the exact community and field, so a future data
+  // update with a bad row is actually visible instead of silently
+  // corrupting stats.
+  for (const field of NUMERIC_FIELDS) {
+    const value = record[field];
+    if (typeof value === "number" && Number.isNaN(value)) {
+      console.warn(
+        `Malformed numeric value for "${field}" in community "${record.community || "(unknown)"}" - got NaN`
+      );
+    }
+  }
+
+  return record;
 }
 
-let cachedRecords: CommunityRecord[] | null = null;
+let cachedRecordsPromise: Promise<CommunityRecord[]> | null = null;
 
+/**
+ * BEFORE: this cached only the resolved array (`if (cachedRecords) return
+ * cachedRecords`), which does nothing for concurrent calls that arrive
+ * before the first one finishes - each one saw `cachedRecords === null`
+ * and independently read + parsed the CSV from disk. This is exactly
+ * what happened on every cold-start load of the Regions page, which
+ * calls `getRegionSummaries()` (which itself calls `getAllRecords()`)
+ * and `getAllRecords()` directly in the same `Promise.all`.
+ *
+ * AFTER: the in-flight Promise itself is cached, so concurrent callers
+ * all await the same single read+parse operation.
+ */
 export async function getAllRecords(): Promise<CommunityRecord[]> {
-  if (cachedRecords) return cachedRecords;
+  if (!cachedRecordsPromise) {
+    cachedRecordsPromise = (async () => {
+      const csvPath = path.join(process.cwd(), "data", "ghana_water_quality_data.csv");
+      const raw = await readFile(csvPath, "utf-8");
 
-  const csvPath = path.join(process.cwd(), "data", "ghana_water_quality_data.csv");
-  const raw = await readFile(csvPath, "utf-8");
+      const parsed = Papa.parse<RawRow>(raw, {
+        header: true,
+        skipEmptyLines: true,
+      });
 
-  const parsed = Papa.parse<RawRow>(raw, {
-    header: true,
-    skipEmptyLines: true,
-  });
+      if (parsed.errors.length > 0) {
+        // Real parsing errors (malformed rows, mismatched column count,
+        // etc.) were previously silently ignored - Papa.parse still
+        // returns whatever rows it *could* parse, so this failed
+        // silently rather than surfacing a clear error.
+        console.error(
+          `CSV parsing encountered ${parsed.errors.length} error(s):`,
+          parsed.errors.slice(0, 5)
+        );
+      }
 
-  cachedRecords = parsed.data.map(mapRow);
-  return cachedRecords;
+      return parsed.data.map(mapRow);
+    })();
+  }
+
+  return cachedRecordsPromise;
 }
 
 export interface RegionSummary {

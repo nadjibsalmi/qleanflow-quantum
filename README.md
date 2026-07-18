@@ -32,16 +32,21 @@ Every number in this dashboard traces back to either the real 500-community
 dataset or an actual model run — nothing is randomized or invented:
 
 - **Dataset**: `data/ghana_water_quality_data.csv` — 500 Ghanaian
-  communities across 16 regions, 23 features per community (water source,
+  communities across 16 regions, 22 features per community (water source,
   contamination type/level, income, education, mining-zone status, etc).
-- **Live risk estimator**: a logistic regression model, fitted offline on
-  the real dataset (`scripts/train_risk_model.py`, scikit-learn), achieving
-  80.2% training accuracy. Its exact fitted coefficients are ported into
-  `src/algorithms/riskEstimator.ts` and run entirely client-side, so the
-  dashboard responds instantly as you adjust inputs — no server round-trip.
+- **Live quantum risk estimator**: a Quantum Support Vector Classifier
+  (QSVC), fitted offline on the real dataset (`scripts/train_qsvc_model.py`,
+  a real 4-qubit statevector simulation + scikit-learn SVM on top),
+  achieving 78.0% test accuracy. Its fitted support vectors and SVM
+  coefficients are ported into `src/algorithms/qsvcEstimator.ts` +
+  `quantumSimulator.ts`, and the quantum kernel is recomputed live,
+  client-side, on every input change — no server round-trip, and no
+  precomputed/cached result.
 - **Model comparison**: SVM, Quantum SVC, and Quantum Neural Network
   results shown on the Model page are copied directly from the saved
-  execution output of the original project's training notebook. Where a
+  execution output of the original project's training notebook (a
+  different, earlier training run than the live estimator above — see the
+  note on that page for why the two QSVC accuracy numbers differ). Where a
   metric wasn't captured in that run (the QNN's final test accuracy), the
   dashboard says so explicitly instead of showing a plausible-looking
   fabricated number.
@@ -78,14 +83,20 @@ src/
 ├── app/(dashboard)/     # Routes: overview, regions, model, methodology, about
 ├── components/
 │   ├── ui/              # Reusable primitives (Card, KpiCard)
-│   └── dashboard/       # Sidebar, Header, chart components
-├── algorithms/          # riskEstimator.ts - the client-side logistic regression
-├── config/              # model.ts - real QNN hyperparameters + comparison metrics
+│   └── dashboard/       # Sidebar, Header, chart components, QuantumRiskEstimator
+├── algorithms/
+│   ├── quantumSimulator.ts  # Real 4-qubit statevector simulation + quantum kernel
+│   ├── qsvcEstimator.ts     # Full QSVC inference pipeline (standardize -> PCA -> kernel -> SVM)
+│   └── data/qsvcParams.ts   # Fitted model parameters (support vectors, coefficients)
+├── config/              # model.ts - historical QNN/SVM/QSVC comparison metrics
 ├── services/            # waterQualityData.ts - server-side CSV parsing/aggregation
 └── utils/               # cn.ts - Tailwind class merging helper
 
 scripts/
-└── train_risk_model.py  # Reproduces the risk estimator's exact coefficients
+└── train_qsvc_model.py  # Reproduces the live QSVC's exact fitted parameters
+
+notebooks/
+└── qsvc_live_demo.ipynb # Fully executed walkthrough of the same training run
 
 data/
 └── ghana_water_quality_data.csv
@@ -100,11 +111,11 @@ npm run dev
 
 Open http://localhost:3000.
 
-To reproduce the risk estimator's coefficients from scratch:
+To reproduce the live QSVC's fitted parameters from scratch:
 
 ```bash
 pip install pandas scikit-learn
-python scripts/train_risk_model.py
+python scripts/train_qsvc_model.py
 ```
 
 ## Attribution
