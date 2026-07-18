@@ -1,4 +1,4 @@
-import { quantumKernel } from "./quantumSimulator";
+import { featureMapState } from "./quantumSimulator";
 import { QSVC_PARAMS } from "./data/qsvcParams";
 
 /**
@@ -105,19 +105,52 @@ function sigmoid(z: number): number {
   return 1 / (1 + Math.exp(-z));
 }
 
+/**
+ * BEFORE: quantumKernel(angles, sv) recomputed featureMapState(sv) from
+ * scratch on every single call - including all 199 support-vector kernel
+ * evaluations triggered by every slider movement in the UI - even though
+ * the support vectors themselves never change between calls. Precomputing
+ * their quantum states once removes 199 redundant tensor-product
+ * computations per estimateQsvcRisk() call.
+ */
+let cachedSupportVectorStates: number[][] | null = null;
+
+function getSupportVectorStates(): number[][] {
+  if (!cachedSupportVectorStates) {
+    cachedSupportVectorStates = QSVC_PARAMS.supportVectors.map((sv) =>
+      featureMapState(sv)
+    );
+  }
+  return cachedSupportVectorStates;
+}
+
+/**
+ * Quantum kernel (fidelity) between a live query point and every
+ * precomputed support-vector quantum state. The real 4-qubit statevector
+ * simulation still runs for the query point on every call - only the
+ * support-vector side is cached, since those never change.
+ */
+function quantumKernelAgainstSupportVectors(queryAngles: number[]): number[] {
+  const queryState = featureMapState(queryAngles);
+  return getSupportVectorStates().map((svState) => {
+    let overlap = 0;
+    for (let i = 0; i < queryState.length; i++) overlap += queryState[i] * svState[i];
+    return overlap * overlap;
+  });
+}
+
 export function estimateQsvcRisk(input: QsvcInput): QsvcResult {
   const { vector, heldAtMean } = buildFeatureVector(input);
   const standardized = standardize(vector);
   const pcaComponents = applyPca(standardized);
   const angles = scaleToAngles(pcaComponents);
 
-  const supportVectors = QSVC_PARAMS.supportVectors;
   const dualCoef = QSVC_PARAMS.dualCoef;
 
-  // Real quantum kernel computed against every support vector - this is
-  // where the actual quantum circuit simulation happens, once per support
-  // vector, at inference time (not precomputed/cached from training).
-  const kernelValues = supportVectors.map((sv) => quantumKernel(angles, sv));
+  // Real quantum kernel computed against every support vector, with the
+  // support-vector-side quantum states precomputed once (see
+  // getSupportVectorStates) rather than recomputed on every call.
+  const kernelValues = quantumKernelAgainstSupportVectors(angles);
 
   const decisionValue =
     kernelValues.reduce((sum, k, i) => sum + dualCoef[i] * k, 0) + QSVC_PARAMS.intercept;

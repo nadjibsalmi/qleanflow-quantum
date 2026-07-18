@@ -167,16 +167,20 @@ function SliderInput({
   step: number;
   unit?: string;
 }) {
+  const id = `slider-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return (
     <div>
       <div className="flex items-center justify-between text-sm mb-2">
-        <span className="text-muted">{label}</span>
+        <label htmlFor={id} className="text-muted">
+          {label}
+        </label>
         <span className="font-medium font-mono">
           {value}
           {unit ? ` ${unit}` : ""}
         </span>
       </div>
       <input
+        id={id}
         type="range"
         min={min}
         max={max}
