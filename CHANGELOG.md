@@ -41,6 +41,7 @@ All notable changes to this project are documented here.
 ## [Unreleased] - Comprehensive audit fixes
 
 ### Fixed (Critical)
+
 - About page falsely claimed no live computation happens ("does not
   retrain the model at request time") - directly contradicted the live
   QSVC estimator. Rewritten to accurately describe it.
@@ -53,6 +54,7 @@ All notable changes to this project are documented here.
   estimator was fully superseded by the QSVC but never removed.
 
 ### Fixed (High)
+
 - MobileNav drawer is now a real accessible dialog: `role="dialog"`,
   `aria-modal`, keyboard focus trap, body scroll lock while open, and
   focus restoration to the trigger button on close.
@@ -66,6 +68,7 @@ All notable changes to this project are documented here.
   dependency advisory (no safe fix currently available upstream).
 
 ### Fixed (Medium)
+
 - Real race condition: `getAllRecords()` cached only the resolved value,
   not the in-flight Promise, so concurrent cold-start calls (e.g. the
   Regions page's `Promise.all`) each independently re-parsed the CSV.
@@ -79,6 +82,7 @@ All notable changes to this project are documented here.
 - Fixed a dangling doc reference to a non-existent `docs/MODEL.md`.
 
 ### Fixed (Low)
+
 - `Card` used `<h3>` with no `<h2>` anywhere on the page, skipping a
   heading level (WCAG 1.3.1). Changed to `<h2>`.
 - Added `aria-current="page"` to active navigation links.
@@ -88,3 +92,81 @@ All notable changes to this project are documented here.
   `<label htmlFor>` association with their `<input>`.
 - Replaced array-index React keys with real unique identifiers
   (community name) in CommunityMap.
+
+## [Unreleased] - Round 2 audit fixes (mathematical/architectural rigor pass)
+
+### Fixed (Critical - logical inconsistency)
+- `predictedLabel` and `riskLevel` were derived from two different values
+  (raw SVM decision function sign vs. Platt-calibrated probability),
+  which disagreed for a real, reachable input range (contaminationLevel
+  ~8.9-9.7) - the UI could show "predicted good quality" next to a "HIGH
+  RISK" badge simultaneously. Both fields are now derived from the same
+  single `classify()` function, from the same probability value, making
+  this disagreement structurally impossible. Added a regression test
+  sweeping the full 0-10 contamination range to prove it.
+
+### Fixed (High - real type safety, not cosmetic)
+- The `FEATURE_INDEX`/`userProvided` object was stringly-typed with no
+  compile-time link to the real feature list - a typo would silently
+  freeze a feature at its dataset mean forever with zero error anywhere.
+  First fix attempt (blanket `as const` on the whole params object)
+  broke numeric arithmetic elsewhere by over-narrowing every number to
+  its own literal type - reverted. Second fix attempt (`as const` +
+  plain `: QsvcParams` type annotation) silently failed too - the
+  annotation re-widened `featureNames` back to the interface's declared
+  `readonly string[]`, discarding the literal tuple. Final, verified fix:
+  `as const` on `featureNames` only, combined with `satisfies QsvcParams`
+  instead of a type annotation. Verified for real (not assumed): a
+  deliberately injected typo now fails `tsc --noEmit` with a genuine
+  TS2353 error naming the exact invalid key.
+
+### Fixed then corrected (defensive programming vs. mathematical fidelity)
+- Added, then had to partially revert, a clamp on quantum feature-map
+  angles to [0, pi]. The initial unconditional clamp was caught by the
+  existing pipeline cross-verification test: it silently altered a
+  legitimate, real held-out test point (whose 3rd PCA component
+  normalizes to -0.00227, ordinary floating-point boundary noise, not
+  wild extrapolation), shifting decisionValue by ~4e-4 and breaking exact
+  fidelity with the real trained Python model (which does not clip its
+  MinMaxScaler either). Final fix: no more silent alteration of the
+  value - RY(theta) is mathematically valid for any real theta, so
+  ordinary boundary noise is now preserved exactly (verified: all
+  existing tests, including the strict 6-decimal-place pipeline
+  cross-check, pass again). A `console.warn` fires only for genuinely
+  extreme extrapolation (more than 50% of the trained range beyond either
+  edge), which is observable without ever corrupting a legitimate result.
+
+### Fixed (Medium - code duplication / single source of truth)
+- The fidelity/kernel formula existed in two independent places
+  (`quantumKernel()` in quantumSimulator.ts, and an inlined copy in
+  qsvcEstimator.ts's optimized precomputed-state path). Extracted a
+  single `fidelityFromStates()` function both paths now call, so there
+  is exactly one definition of "quantum fidelity" in the codebase.
+
+### Fixed (Low - UI/hydration correctness)
+- The dark-mode icon (Sun/Moon) previously flashed the wrong icon for
+  one frame on cold load, because its React state started at `false`
+  regardless of the real theme (corrected only after a `useEffect` ran
+  post-mount). A first fix attempt (read the real state via a lazy
+  `useState` initializer checking `document.documentElement.classList`)
+  looked right but was rejected on review: it would have caused a real
+  hydration MISMATCH (not just a flash) whenever the real theme is dark,
+  since the initializer evaluates differently on the server (no
+  `document`) versus during client hydration. Final fix: both icons
+  always render; CSS alone (`hidden dark:block` / `block dark:hidden`)
+  decides visibility, with zero dependency on JS state or timing.
+  Discovered and fixed a prerequisite bug while implementing this:
+  Tailwind's `dark:` variant had no `@custom-variant` declaration, so it
+  silently defaulted to `prefers-color-scheme` instead of this app's
+  actual `.dark`-class toggle mechanism - not yet an active bug (grep
+  confirmed `dark:` was never used anywhere before this fix), but a live
+  trap for the first future use. Also removed a residual hydration risk
+  on the toggle button's `aria-label` (previously theme-dependent, now a
+  neutral, state-independent string).
+
+### Fixed (Low - dead code)
+- `quantumKernel()` was exported as the module's apparent public API but
+  was, in practice, only ever called by its own test - the live app used
+  a separate, optimized code path. Resolved by making both paths share
+  `fidelityFromStates()` (see above) rather than leaving one of the two
+  as effectively dead weight.
