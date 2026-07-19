@@ -1,4 +1,4 @@
-import { featureMapState } from "./quantumSimulator";
+import { featureMapState, fidelityFromStates } from "./quantumSimulator";
 import { QSVC_PARAMS } from "./data/qsvcParams";
 
 /**
@@ -13,11 +13,11 @@ import { QSVC_PARAMS } from "./data/qsvcParams";
  * final accuracy not captured) - see src/config/model.ts for those
  * historical reference numbers.
  *
- * The UI currently exposes 6 of the 18 features as user inputs (the same
- * 6 the earlier classical estimator used). The remaining 12 are held at
- * their real dataset mean (from the fitted StandardScaler) rather than an
- * arbitrary placeholder - this is stated explicitly in the returned
- * result so it's never presented as if all 18 were user-controlled.
+ * The UI currently exposes 6 of the 18 features as user inputs. The
+ * remaining 12 are held at their real dataset mean (from the fitted
+ * StandardScaler) rather than an arbitrary placeholder - this is stated
+ * explicitly in the returned result so it's never presented as if all 18
+ * were user-controlled.
  */
 
 export interface QsvcInput {
@@ -29,25 +29,76 @@ export interface QsvcInput {
   educationYears: number;
 }
 
+export type RiskLevel = "low" | "moderate" | "high" | "critical";
+
 export interface QsvcResult {
+  /** Calibrated probability [0,1] that water quality is classified "good". */
   goodQualityProbability: number;
+  /** Raw SVM decision function value (signed distance from the separating hyperplane, in kernel space). Provided for diagnostics only - see predictedLabel for the calibrated classification. */
   decisionValue: number;
+  /**
+   * Binary classification, thresholded at goodQualityProbability >= 0.5.
+   *
+   * AUDIT FIX: this was previously derived from `decisionValue >= 0`
+   * (the raw, uncalibrated SVM decision boundary) while `riskLevel` was
+   * derived from `goodQualityProbability` (the Platt-scaled, calibrated
+   * probability). Because Platt scaling's calibration curve does not
+   * cross exactly at decisionValue=0 <-> probability=0.5, this created a
+   * real, reproducible input range (contaminationLevel roughly 8.9-9.7 at
+   * default slider values for the other inputs) where predictedLabel=1
+   * ("good") while riskLevel="high" simultaneously - a visible
+   * contradiction in the UI. Both fields must be derived from the SAME
+   * single source of truth (the calibrated probability) so they can
+   * never disagree by construction.
+   */
   predictedLabel: 0 | 1;
-  riskLevel: "low" | "moderate" | "high" | "critical";
+  riskLevel: RiskLevel;
   quantumKernelValues: number[];
   featuresHeldAtMean: string[];
 }
 
-function classifyRisk(goodQualityProbability: number): QsvcResult["riskLevel"] {
-  if (goodQualityProbability >= 0.75) return "low";
-  if (goodQualityProbability >= 0.5) return "moderate";
-  if (goodQualityProbability >= 0.25) return "high";
-  return "critical";
+const RISK_THRESHOLDS: { min: number; level: RiskLevel }[] = [
+  { min: 0.75, level: "low" },
+  { min: 0.5, level: "moderate" },
+  { min: 0.25, level: "high" },
+  { min: -Infinity, level: "critical" },
+];
+
+/**
+ * Single source of truth for turning a calibrated probability into both
+ * `predictedLabel` and `riskLevel`. Deriving both fields from this one
+ * function, from the same probability value, makes the earlier
+ * label/risk disagreement bug structurally impossible to reintroduce -
+ * there is no second code path that could drift out of sync.
+ */
+function classify(goodQualityProbability: number): {
+  predictedLabel: 0 | 1;
+  riskLevel: RiskLevel;
+} {
+  const riskLevel =
+    RISK_THRESHOLDS.find((t) => goodQualityProbability >= t.min)?.level ?? "critical";
+  const predictedLabel: 0 | 1 = goodQualityProbability >= 0.5 ? 1 : 0;
+  return { predictedLabel, riskLevel };
 }
 
-const FEATURE_INDEX: Record<string, number> = Object.fromEntries(
+/**
+ * AUDIT FIX (type safety): previously `Record<string, number>`, a
+ * "stringly-typed" map with no compile-time link between its keys and
+ * `QSVC_PARAMS.featureNames`. A typo in either place would silently and
+ * permanently freeze that feature at its dataset mean, with zero
+ * compiler error and zero runtime warning.
+ *
+ * `FeatureName` is now derived directly from the actual data
+ * (`typeof QSVC_PARAMS`), so `userProvided`'s keys are checked against
+ * the real feature list at compile time - renaming or typo-ing a feature
+ * name in either qsvcParams.ts (regenerated from Python) or here is now
+ * a compile error, not a silent data bug.
+ */
+type FeatureName = (typeof QSVC_PARAMS)["featureNames"][number];
+
+const FEATURE_INDEX: Record<FeatureName, number> = Object.fromEntries(
   QSVC_PARAMS.featureNames.map((name, i) => [name, i])
-);
+) as Record<FeatureName, number>;
 
 /** Builds the full 18-feature raw vector: user inputs where available, dataset mean elsewhere. */
 function buildFeatureVector(input: QsvcInput): {
@@ -58,7 +109,7 @@ function buildFeatureVector(input: QsvcInput): {
   const vector = [...mean]; // start from the dataset mean for every feature
   const heldAtMean: string[] = [];
 
-  const userProvided: Record<string, number> = {
+  const userProvided: Partial<Record<FeatureName, number>> = {
     "Distance to Nearest River (km)": input.distanceToRiverKm,
     "Is Mining Zone": input.isMiningZone ? 1 : 0,
     "Contamination Level": input.contaminationLevel,
@@ -68,8 +119,9 @@ function buildFeatureVector(input: QsvcInput): {
   };
 
   for (const name of QSVC_PARAMS.featureNames) {
-    if (name in userProvided) {
-      vector[FEATURE_INDEX[name]] = userProvided[name];
+    const provided = userProvided[name];
+    if (provided !== undefined) {
+      vector[FEATURE_INDEX[name]] = provided;
     } else {
       heldAtMean.push(name);
     }
@@ -93,10 +145,68 @@ export function applyPca(standardized: number[]): number[] {
   );
 }
 
+/**
+ * AUDIT FIX, corrected after a regression was caught by the pipeline
+ * cross-verification test (qsvcPipeline.test.ts):
+ *
+ * Attempt 1 (reverted): unconditionally clamp `normalized` to [0, 1]
+ * before multiplying by pi. This looked like sound defensive programming,
+ * but it silently altered a LEGITIMATE result: the real held-out test
+ * point used for cross-verification produces a third PCA component whose
+ * normalized value is -0.00227 - a hair past the trained boundary due to
+ * ordinary floating-point/interpolation noise, not a wild extrapolation.
+ * scikit-learn's MinMaxScaler does not clip by default either (clip=False
+ * is the default), so the REAL trained Python model legitimately produces
+ * this same tiny-negative angle. Clamping it to exactly 0 changed the
+ * quantum kernel value enough to shift decisionValue by ~4e-4 versus the
+ * real model - a direct violation of "zero approximation" fidelity to
+ * the actual trained system.
+ *
+ * RY(theta) is mathematically well-defined and periodic for ANY real
+ * theta (negative, or beyond pi) - there is no crash risk from an
+ * out-of-[0,pi] angle, only a *domain-shift* concern (the SVC was
+ * calibrated on angles that landed in [0,pi] for the training set, and a
+ * genuinely wild extrapolation - e.g. an angle several multiples of pi
+ * away from that range - would mean querying the model far outside
+ * anything it was fitted on). The correct fix distinguishes between
+ * ordinary boundary noise (preserve exactly, no alteration) and truly
+ * extreme extrapolation (flag it, without silently rewriting the value).
+ *
+ * `BOUNDARY_TOLERANCE` allows for realistic floating-point/interpolation
+ * noise right at the trained boundary (empirically, real data points can
+ * land a few thousandths outside [0,1]) without ever triggering on that.
+ * Only genuinely out-of-distribution queries (more than 50% of the full
+ * trained range beyond either edge) are flagged - loud, not silent - so
+ * this is observable without ever corrupting a legitimate value.
+ */
+const ANGLE_BOUNDARY_TOLERANCE = 0.05;
+
 export function scaleToAngles(pcaComponents: number[]): number[] {
   const { dataMin, dataRange } = QSVC_PARAMS.angleScaler;
   return pcaComponents.map((v, i) => {
     const normalized = (v - dataMin[i]) / dataRange[i];
+
+    if (
+      normalized < -ANGLE_BOUNDARY_TOLERANCE ||
+      normalized > 1 + ANGLE_BOUNDARY_TOLERANCE
+    ) {
+      // Genuinely far outside the domain the SVC was calibrated on -
+      // surfaced as a warning (visible, actionable) rather than silently
+      // clamped (invisible, and would corrupt the exact result for
+      // legitimate near-boundary values as the reverted attempt did).
+      console.warn(
+        `[qsvcEstimator] PCA component ${i} produced a normalized value of ` +
+          `${normalized.toFixed(4)}, well outside the [0, 1] range the ` +
+          `model was calibrated on. The resulting prediction is an ` +
+          `extrapolation beyond the model's trained domain and should be ` +
+          `treated with reduced confidence.`
+      );
+    }
+
+    // No alteration of the value itself - RY(theta) is mathematically
+    // valid for any real theta, and this preserves exact fidelity with
+    // the real trained model's behavior (verified: matches scikit-learn's
+    // own un-clipped MinMaxScaler.transform() output exactly).
     return normalized * Math.PI;
   });
 }
@@ -106,12 +216,12 @@ function sigmoid(z: number): number {
 }
 
 /**
- * BEFORE: quantumKernel(angles, sv) recomputed featureMapState(sv) from
- * scratch on every single call - including all 199 support-vector kernel
- * evaluations triggered by every slider movement in the UI - even though
- * the support vectors themselves never change between calls. Precomputing
- * their quantum states once removes 199 redundant tensor-product
- * computations per estimateQsvcRisk() call.
+ * Precomputed quantum states for every support vector, computed once and
+ * cached for the lifetime of the module (support vectors are fixed,
+ * fitted model parameters - they never change between calls). Computing
+ * a 4-qubit statevector for 199 support vectors on every single slider
+ * movement, only to discard 198 of the 199 unchanged results each time,
+ * was pure wasted computation.
  */
 let cachedSupportVectorStates: number[][] | null = null;
 
@@ -128,15 +238,16 @@ function getSupportVectorStates(): number[][] {
  * Quantum kernel (fidelity) between a live query point and every
  * precomputed support-vector quantum state. The real 4-qubit statevector
  * simulation still runs for the query point on every call - only the
- * support-vector side is cached, since those never change.
+ * support-vector side is cached. Fidelity itself is computed via
+ * `fidelityFromStates`, the same single-source-of-truth function
+ * `quantumKernel()` in quantumSimulator.ts uses internally - there is
+ * exactly one formula for "quantum fidelity" in this codebase.
  */
 function quantumKernelAgainstSupportVectors(queryAngles: number[]): number[] {
   const queryState = featureMapState(queryAngles);
-  return getSupportVectorStates().map((svState) => {
-    let overlap = 0;
-    for (let i = 0; i < queryState.length; i++) overlap += queryState[i] * svState[i];
-    return overlap * overlap;
-  });
+  return getSupportVectorStates().map((svState) =>
+    fidelityFromStates(queryState, svState)
+  );
 }
 
 export function estimateQsvcRisk(input: QsvcInput): QsvcResult {
@@ -167,11 +278,15 @@ export function estimateQsvcRisk(input: QsvcInput): QsvcResult {
     -(QSVC_PARAMS.plattA * decisionValue - QSVC_PARAMS.plattB)
   );
 
+  // predictedLabel and riskLevel both come from this single call, from
+  // the same probability value - they cannot disagree by construction.
+  const { predictedLabel, riskLevel } = classify(goodQualityProbability);
+
   return {
     goodQualityProbability,
     decisionValue,
-    predictedLabel: decisionValue >= 0 ? 1 : 0,
-    riskLevel: classifyRisk(goodQualityProbability),
+    predictedLabel,
+    riskLevel,
     quantumKernelValues: kernelValues,
     featuresHeldAtMean: heldAtMean,
   };

@@ -53,6 +53,7 @@ export function featureMapState(angles: number[]): number[] {
   return state;
 }
 
+/** Dot product of two real vectors. Not exported: internal building block only. */
 function dot(a: number[], b: number[]): number {
   let sum = 0;
   for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
@@ -60,13 +61,32 @@ function dot(a: number[], b: number[]): number {
 }
 
 /**
- * Quantum kernel: fidelity |<psi(angles1)|psi(angles2)>|^2 between the two
- * feature-mapped quantum states. Since all amplitudes are real here, the
+ * Quantum fidelity |<psi1|psi2>|^2 between two ALREADY-COMPUTED statevectors.
+ * Since all amplitudes in this circuit are real (see module docstring), the
  * inner product is a plain dot product and the fidelity is its square.
+ *
+ * This is the single source of truth for the fidelity formula. Both
+ * `quantumKernel` below (computes both states from angles) and
+ * `qsvcEstimator.ts`'s optimized inference path (which precomputes and
+ * caches support-vector states once, then only computes the query state
+ * fresh per call) call through this same function - there is exactly one
+ * place where "fidelity" is defined, so the two code paths cannot silently
+ * drift into different formulas.
+ */
+export function fidelityFromStates(state1: number[], state2: number[]): number {
+  const overlap = dot(state1, state2);
+  return overlap * overlap;
+}
+
+/**
+ * Quantum kernel: fidelity |<psi(angles1)|psi(angles2)>|^2 between the two
+ * feature-mapped quantum states, computing both states from their raw
+ * rotation angles. This is the natural "from scratch" entry point (used
+ * directly by tests, and by any caller that doesn't already have a
+ * precomputed statevector on either side); qsvcEstimator.ts's live
+ * inference path uses `fidelityFromStates` directly instead, since it
+ * keeps support-vector states cached across calls.
  */
 export function quantumKernel(angles1: number[], angles2: number[]): number {
-  const s1 = featureMapState(angles1);
-  const s2 = featureMapState(angles2);
-  const overlap = dot(s1, s2);
-  return overlap * overlap;
+  return fidelityFromStates(featureMapState(angles1), featureMapState(angles2));
 }
