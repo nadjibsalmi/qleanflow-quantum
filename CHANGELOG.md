@@ -96,6 +96,7 @@ All notable changes to this project are documented here.
 ## [Unreleased] - Round 2 audit fixes (mathematical/architectural rigor pass)
 
 ### Fixed (Critical - logical inconsistency)
+
 - `predictedLabel` and `riskLevel` were derived from two different values
   (raw SVM decision function sign vs. Platt-calibrated probability),
   which disagreed for a real, reachable input range (contaminationLevel
@@ -106,6 +107,7 @@ All notable changes to this project are documented here.
   sweeping the full 0-10 contamination range to prove it.
 
 ### Fixed (High - real type safety, not cosmetic)
+
 - The `FEATURE_INDEX`/`userProvided` object was stringly-typed with no
   compile-time link to the real feature list - a typo would silently
   freeze a feature at its dataset mean forever with zero error anywhere.
@@ -121,6 +123,7 @@ All notable changes to this project are documented here.
   TS2353 error naming the exact invalid key.
 
 ### Fixed then corrected (defensive programming vs. mathematical fidelity)
+
 - Added, then had to partially revert, a clamp on quantum feature-map
   angles to [0, pi]. The initial unconditional clamp was caught by the
   existing pipeline cross-verification test: it silently altered a
@@ -137,6 +140,7 @@ All notable changes to this project are documented here.
   edge), which is observable without ever corrupting a legitimate result.
 
 ### Fixed (Medium - code duplication / single source of truth)
+
 - The fidelity/kernel formula existed in two independent places
   (`quantumKernel()` in quantumSimulator.ts, and an inlined copy in
   qsvcEstimator.ts's optimized precomputed-state path). Extracted a
@@ -144,6 +148,7 @@ All notable changes to this project are documented here.
   is exactly one definition of "quantum fidelity" in the codebase.
 
 ### Fixed (Low - UI/hydration correctness)
+
 - The dark-mode icon (Sun/Moon) previously flashed the wrong icon for
   one frame on cold load, because its React state started at `false`
   regardless of the real theme (corrected only after a `useEffect` ran
@@ -165,8 +170,41 @@ All notable changes to this project are documented here.
   neutral, state-independent string).
 
 ### Fixed (Low - dead code)
+
 - `quantumKernel()` was exported as the module's apparent public API but
   was, in practice, only ever called by its own test - the live app used
   a separate, optimized code path. Resolved by making both paths share
   `fidelityFromStates()` (see above) rather than leaving one of the two
   as effectively dead weight.
+
+## [Unreleased] - Round 3 audit fixes (new independent pass)
+
+### Fixed (High - defensive programming completeness)
+- `safeNumber()` (formerly a warn-only NaN detector) now substitutes a
+  safe `0` fallback at the single point of data ingestion (`mapRow`),
+  instead of only warning while leaving NaN in the record to silently
+  propagate into every downstream aggregate. Previously only
+  `totalPopulation` had an ad-hoc `|| 0` guard against this - `avgDiseasePrevalence`
+  and `avgWaterAccessScore` had none, meaning a single malformed CSV cell
+  in either column would have silently turned a real dashboard KPI into
+  `NaN`. Verified with 6 new tests, including one that deliberately
+  corrupts 3 different fields simultaneously and confirms every numeric
+  field in the resulting record is a real number.
+
+### Fixed (Medium - eliminated duplicated logic)
+- The `round((list.filter(predicate).length / list.length) * 100, 1)`
+  percentage calculation was repeated verbatim 5 times across
+  `getRegionSummaries` and `getOverallStats`. Extracted to a single
+  `percentageMatching()` helper (plus a matching `average()` helper for
+  the repeated `reduce(...) / length` pattern) - one definition, reused
+  everywhere.
+
+### Fixed (Medium - stringly-typed pattern, same category as round 2)
+- `RISK_COLORS` in `QuantumRiskEstimator.tsx` was `Record<string, string>`
+  despite `estimateQsvcRisk()` already returning a real `RiskLevel` union
+  type - the exact same stringly-typed risk already fixed for
+  `FEATURE_INDEX` in round 2, just not yet applied here. Changed to
+  `Record<RiskLevel, string>`. Verified for real: removing one key now
+  fails `tsc --noEmit` with a genuine "Property 'critical' is missing"
+  error, rather than silently rendering `undefined` as a CSS class at
+  runtime.
